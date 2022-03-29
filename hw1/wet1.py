@@ -76,3 +76,15 @@ def numerical_hessian(f, x, eps=1e-5):
     return hessian
 
 
+if __name__ == '__main__':
+    x = np.random.randn(3)
+    A = np.random.randn(3, 3)
+
+    epsilons = [2**-i for i in range(1, 60)]
+
+    f1_grad_a =
+
+    for e in epsilons:
+
+
+
