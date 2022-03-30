@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 
 
 def phi113(x):
-    x1, x2, x3 = x
+    x1, x2, x3 = x.flatten()
     return (np.cos(x1 * x2**2 *x3))**2
 
 
 def phi113_grad(x):
-    x1, x2, x3 = x
+    x1, x2, x3 = x.flatten()
     return np.array([
         -x2**2 * x3 * np.sin(2 * x1 * x2**2 * x3),
         -2 * x1 * x2 * x3 * np.sin(2 * x1 * x2**2 * x3),
@@ -17,8 +17,8 @@ def phi113_grad(x):
 
 
 def phi113_hessian(x):
-    x1, x2, x3 = x
-    h11 = -2 * x2**4 * x3**2 * np.sin(2 * x1 * x2**2 * x3)
+    x1, x2, x3 = x.flatten()
+    h11 = -2 * x2**4 * x3**2 * np.cos(2 * x1 * x2**2 * x3)
     h12 = h21 = -2 * x2 * x3 * np.sin(2 * x1 * x2**2 * x3) +\
         - 4 * x2**3 * x3**2 * x1 * np.cos(2 * x1 * x2**2 * x3)
     h13 = h31 = -x2**2 * np.sin(2 * x1 * x2**2 * x3) -\
@@ -43,36 +43,55 @@ def h_tag(x):
 
 def h_tagtag(x):
     res = np.cos(2*x) / np.sqrt(1 + np.sin(x)**2)
-    res += np.sin(2*x)**2 / (1 + np.sin(x)**2)**1.5
+    res -= 0.25 * np.sin(2*x)**2 / (1 + np.sin(x)**2)**1.5
     return res
 
 
-def sec1151(x: np.ndarray, A: np.ndarray):
+def sec1151(x: np.ndarray, A: np.ndarray, grad_only=False):
     val = phi113(A @ x)
     grad = A.T @ phi113_grad(A@x)
+    if grad_only:
+        return grad
     hessian = A.T @ phi113_hessian(A@x) @ A
 
     return val, grad, hessian
 
 
-def sec1152(x: np.ndarray):
+def sec1152(x: np.ndarray, grad_only=False):
     val = h(phi113(x))
     grad = h_tag(phi113(x)) * phi113_grad(x)
-    hessian = h_tagtag(phi113(x)) * phi113_grad(x) @ phi113_grad(x).T
+    if grad_only:
+        return grad
+
+    hessian = h_tagtag(phi113(x)) * phi113_grad(x).reshape(-1, 1) @ phi113_grad(x).reshape(1,-1)
     hessian += h_tag(phi113(x)) * phi113_hessian(x)
 
     return val, grad, hessian
 
 
 def numerical_grad(f, x, eps=1e-5, *args):
-    grad = (f(x+eps, *args) - f(x-eps, *args)) / (2*eps)
+    grad = np.zeros_like(x)
+    for i in range(len(x)):
+        e_i = np.zeros_like(x)
+        e_i[i] = 1
+        grad[i] = (f(x + eps * e_i, *args) - f( x - eps * e_i, *args)) / (2*eps)
+
     return grad
 
 
 def numerical_hessian(f, x, eps=1e-5, *args):
     hessian = np.zeros((len(x), len(x)))
+
     for i in range(len(x)):
-        hessian[i, :] = numerical_grad(f, x + eps, eps, *args) - numerical_grad(f, x - eps, eps, *args)
+        # hessian[i, :] = numerical_grad(f, x + eps, eps, *args) - numerical_grad(f, x - eps, eps, *args)
+        e_i = np.zeros_like(x)
+        e_i[i] = 1
+
+        if f is f1:
+            hessian[i, :] = sec1151(x + eps * e_i, *args, grad_only=True) - sec1151(x - eps * e_i, *args, grad_only=True)
+        else:
+            hessian[i, :] = sec1152(x + eps * e_i, grad_only=True) - sec1152(x - eps * e_i, grad_only=True)
+
         hessian[i, :] /= 2*eps
 
     return hessian
@@ -87,8 +106,10 @@ def f2(x):
 
 
 if __name__ == '__main__':
-    x = np.random.randn(3)/5
-    A = np.random.randn(3, 3)/5
+    x = np.random.randn(3)#/5
+    A = np.random.randn(3, 3)#/5
+    # x = np.array([1,2,3])
+    # A = np.ones((3,3))
 
     epsilons = [2**-i for i in range(60)]
 
