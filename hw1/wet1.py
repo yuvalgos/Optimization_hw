@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def phi113(x):
@@ -63,28 +64,66 @@ def sec1152(x: np.ndarray):
     return val, grad, hessian
 
 
-def numerical_grad(f, x, eps=1e-5):
-    grad = (f(x+eps) - f(x-eps)) / (2*eps)
+def numerical_grad(f, x, eps=1e-5, *args):
+    grad = (f(x+eps, *args) - f(x-eps, *args)) / (2*eps)
+    return grad
 
 
-def numerical_hessian(f, x, eps=1e-5):
+def numerical_hessian(f, x, eps=1e-5, *args):
     hessian = np.zeros((len(x), len(x)))
     for i in range(len(x)):
-        hessian[i, :] = numerical_grad(f, x + eps, eps) - numerical_grad(f, x - eps, eps)
+        hessian[i, :] = numerical_grad(f, x + eps, eps, *args) - numerical_grad(f, x - eps, eps, *args)
         hessian[i, :] /= 2*eps
 
     return hessian
 
 
+def f1(x, A):
+    return phi113(A @ x)
+
+
+def f2(x):
+    return h(phi113(x))
+
+
 if __name__ == '__main__':
-    x = np.random.randn(3)
-    A = np.random.randn(3, 3)
+    x = np.random.randn(3)/5
+    A = np.random.randn(3, 3)/5
 
-    epsilons = [2**-i for i in range(1, 60)]
+    epsilons = [2**-i for i in range(60)]
 
-    f1_grad_a =
+    _, f1_grad_analytic, f1_hess_analytic = sec1151(x, A)
+    _, f2_grad_analytic, f2_hess_analytic = sec1152(x)
 
+    err_grad1, err_hess1 = [], []
+    err_grad2, err_hess2 = [], []
     for e in epsilons:
+        f1_grad_numerical = numerical_grad(f1, x, e, A)
+        err_grad1.append(np.linalg.norm(f1_grad_numerical - f1_grad_analytic, ord=np.inf))
+        f1_hess_numerical = numerical_hessian(f1, x, e, A)
+        err_hess1.append(np.linalg.norm((f1_hess_numerical - f1_hess_analytic).reshape(-1), ord=np.inf))
+        f2_grad_numerical = numerical_grad(f2, x, e)
+        err_grad2.append(np.linalg.norm(f2_grad_numerical - f2_grad_analytic, ord=np.inf))
+        f2_hess_numerical = numerical_hessian(f2, x, e)
+        err_hess2.append(np.linalg.norm((f2_hess_numerical - f2_hess_analytic).reshape(-1), ord=np.inf))
 
+    epsilons_axis = list(range(60))
 
+    fig, axs = plt.subplots(2, 2)
+    axs[0, 0].plot(epsilons_axis, err_grad1)
+    axs[0, 0].set_title('Gradient f1 Error')
+    axs[0, 1].plot(epsilons_axis, err_hess1)
+    axs[0, 1].set_title('Hessian f1 Error')
+    axs[1, 0].plot(epsilons_axis, err_grad2)
+    axs[1, 0].set_title('Gradient f2 Error')
+    axs[1, 1].plot(epsilons_axis, err_hess2)
+    axs[1, 1].set_title('Hessian f2 Error')
 
+    for ax in axs.flat:
+        ax.set(xlabel='-log(epsilon)', ylabel='error')
+        ax.set_yscale('log')
+    fig.tight_layout()
+    plt.show()
+
+    print(A)
+    print(x)
