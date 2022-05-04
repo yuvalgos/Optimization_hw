@@ -120,7 +120,7 @@ def newton_method(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max
         p = np.linalg.solve(np.diag(d.flatten()) @ L.T, y)
 
         lambda_squared = - grad.T @ p
-        if lambda_squared / 2 < eps:
+        if np.linalg.norm(grad) < eps:  # lambda_squared < eps:
             print("newton method converged")
             break
 
@@ -133,15 +133,8 @@ def newton_method(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max
 
 
 if __name__ == "__main__":
-    f_rosenbrock = f_rosenbrock(10)
-    x0 = np.zeros(10)
 
-    x_ros_gd, x_vals, f_vals = gradient_decent(f_rosenbrock, x0)
-    print(f_vals[-1])
-
-    x_ros_newton, x_vals, f_vals = newton_method(f_rosenbrock, x0)
-    print(f_vals[-1])
-
+    # section 2.5
 
     # f1 = f_quadratic(np.array([[3, 0],
     #                            [0, 3]]))
@@ -164,5 +157,23 @@ if __name__ == "__main__":
     # print(x3_gd)
     # x3_nt = newton_method(f2_3, x0, line_search=inexact_line_search)
     # print(x3_nt)
+
+    # section 2.6
+    f_rosenbrock = f_rosenbrock(10)
+    x0 = np.zeros(10)
+    _, _, f_vals_grad = gradient_decent(f_rosenbrock, x0)
+    _, _, f_vals_nt = newton_method(f_rosenbrock, x0)
+
+    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+    axs[0].plot(f_vals_grad)
+    axs[0].set_title("10D Rosenbrock With Gradient Descent")
+    axs[1].plot(f_vals_nt)
+    axs[1].set_title("10D Rosenbrock With Newton Method")
+    for ax in axs.flat:
+        ax.set(xlabel='iteration', ylabel='error')
+        ax.set_yscale('log')
+    fig.tight_layout()
+    plt.show()
+
 
 
