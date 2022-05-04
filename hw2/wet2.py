@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mcholmz import modifiedChol as mchol
+
+import sys
+sys.path.append('..')
+from hw2.mcholmz import modifiedChol as mchol
 
 
 #### parameters
@@ -21,6 +24,7 @@ class f_quadratic:
     def hessian(self, x):
         return 0.5 * (self.Q + self.Q.T)
 
+
 class f_rosenbrock:
     def __init__(self, n):
         self.n = n
@@ -30,11 +34,24 @@ class f_rosenbrock:
 
     def gradient(self, x):
         grad = np.zeros(self.n)
-        grad[-1] =
-        grad[0] = -2 + 2 * x[0]
+        grad[0] = -2 + 2 * x[0] + 400 * x[0] * (- x[1] + x[0]**2)
+        grad[-1] = 200 * (x[-1] - x[-2]**2)
+        for i in range(1, self.n - 1):
+            grad[i] = -2 + 202 * x[i] -400 * x[i] * x[i+1] + 400 * x[i]**3 -200 * x[i-1]**2
 
+        return grad
 
+    def hessian(self, x):
+        hess = np.zeros((self.n, self.n))
+        hess[0, 0] = 2 + 1200 * x[0]**2 - 400 * x[1] + 2 * x[0]
+        hess[-1, -1] = 200
+        hess[0, 1] = hess[1, 0] = -400 * x[0]
+        hess[-1, -2] = hess[-2, -1] = -400 * x[-2]
+        for i in range(1, self.n - 1):
+            hess[i, i] = 202 + 1200 * x[i]**2 - 400 * x[i+1]
+            hess[i-1, i] = hess[i, i-1] = -400 * x[i]
 
+        return hess
 
 
 def inexact_line_search(f, x, p, grad, alpha, beta):
@@ -60,26 +77,38 @@ def exact_line_search(f, x, p, grad, alpha, beta):
     return - (x.T @ (f.Q + f.Q.T) @ p / (2 * p.T @ f.Q @ p))
 
 
-def gradient_decent(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max_iter=100000):
+def gradient_decent(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max_iter=1000000):
     """
     Gradient Descent with Inexact Line Search
     """
+    x_vals = []
+    f_vals = []
+
     x = x0
     for i in range(max_iter):
+        x_vals.append(x)
+        f_vals.append(f(x))
+
         grad = f.gradient(x)
         if np.linalg.norm(grad) < eps:
+            print("gradient descent converged")
             break
 
         p = - grad / np.linalg.norm(grad)
         alpha = line_search(f, x, p, grad, alpha, beta)
         x = x + alpha * p
-    return x
+    return x, x_vals, f_vals
 
 
 def newton_method(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max_iter=100000):
-    x = x0
+    x_vals = []
+    f_vals = []
 
+    x = x0
     for i in range(max_iter):
+        x_vals.append(x)
+        f_vals.append(f(x))
+
         grad = f.gradient(x)
         hess = f.hessian(x)
 
@@ -92,6 +121,7 @@ def newton_method(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max
 
         lambda_squared = - grad.T @ p
         if lambda_squared / 2 < eps:
+            print("newton method converged")
             break
 
         p = p / np.linalg.norm(p)
@@ -99,30 +129,40 @@ def newton_method(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max
         alpha = line_search(f, x, p, grad, alpha, beta)
         x = x + alpha * p
 
-    return x
+    return x, x_vals, f_vals
 
 
 if __name__ == "__main__":
-    f1 = f_quadratic(np.array([[3, 0],
-                               [0, 3]]))
-    f2_3 = f_quadratic(np.array([[10, 0],
-                                [0, 1]]))
-    x0 = np.array([[1.5],
-                   [2]])
+    f_rosenbrock = f_rosenbrock(10)
+    x0 = np.zeros(10)
+
+    x_ros_gd, x_vals, f_vals = gradient_decent(f_rosenbrock, x0)
+    print(f_vals[-1])
+
+    x_ros_newton, x_vals, f_vals = newton_method(f_rosenbrock, x0)
+    print(f_vals[-1])
+
+
+    # f1 = f_quadratic(np.array([[3, 0],
+    #                            [0, 3]]))
+    # f2_3 = f_quadratic(np.array([[10, 0],
+    #                             [0, 1]]))
+    # x0 = np.array([[1.5],
+    #                [2]])
 
     # x1_gd = gradient_decent(f1, x0, line_search=exact_line_search)
     # print(x1_gd)
-    x1_nt = newton_method(f1, x0, line_search=exact_line_search)
-    print(x1_nt)
+    # x1_nt = newton_method(f1, x0, line_search=exact_line_search)
+    # print(x1_nt)
 
     # x2_gd = gradient_decent(f2_3, x0, line_search=exact_line_search)
     # print(x2_gd)
-    x2_nt = newton_method(f2_3, x0, line_search=exact_line_search)
-    print(x2_nt)
+    # x2_nt = newton_method(f2_3, x0, line_search=exact_line_search)
+    # print(x2_nt)
 
     # x3_gd = gradient_decent(f2_3, x0, line_search=inexact_line_search)
     # print(x3_gd)
-    x3_nt = newton_method(f2_3, x0, line_search=inexact_line_search)
-    print(x3_nt)
+    # x3_nt = newton_method(f2_3, x0, line_search=inexact_line_search)
+    # print(x3_nt)
 
 
