@@ -132,31 +132,61 @@ def newton_method(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max
     return x, x_vals, f_vals
 
 
+def plot_3d_results(f, x_vals, title):
+    x_vals = np.array(x_vals).squeeze(2)
+
+    x1_min = -2.0
+    x1_max = 2.0
+    x2_min = -2.0
+    x2_max = 2.0
+
+    x1, x2 = np.meshgrid(np.arange(x1_min, x1_max, 0.1), np.arange(x2_min, x2_max, 0.1))
+    x1_flat = x1.flatten()
+    x2_flat = x2.flatten()
+    surface = [f(x) for x in np.vstack((x1_flat, x2_flat)).T]
+    surface = np.array(surface).reshape(x1.shape)
+
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(16, 8))
+
+    axs[0].remove()
+    axs[0] = fig.add_subplot(1, 2, 1, projection='3d')
+    axs[0].view_init(30, 45)
+    axs[0].plot_surface(x1, x2, surface, cmap='hot')
+    axs[0].contour(x1, x2, surface, offset=-1, cmap='hot')
+    axs[0].plot(x_vals[:, 0], x_vals[:, 1], lw=3, c='b')
+
+    axs[1].contour(x1, x2, surface, cmap='hot')
+    axs[1].plot(x_vals[:, 0], x_vals[:, 1], lw=3, c='b')
+
+    fig.suptitle(title, fontsize=28)
+
+    plt.show()
+
+
 if __name__ == "__main__":
 
     # section 2.5
+    f1 = f_quadratic(np.array([[3, 0],
+                               [0, 3]]))
+    f2_3 = f_quadratic(np.array([[10, 0],
+                                [0, 1]]))
+    x0 = np.array([[1.5],
+                   [2]])
 
-    # f1 = f_quadratic(np.array([[3, 0],
-    #                            [0, 3]]))
-    # f2_3 = f_quadratic(np.array([[10, 0],
-    #                             [0, 1]]))
-    # x0 = np.array([[1.5],
-    #                [2]])
+    _, x_vals1_gd, f_vals1_gd = gradient_decent(f1, x0, line_search=exact_line_search)
+    _, x_vals1_nt, f_vals1_nt = newton_method(f1, x0, line_search=exact_line_search)
+    plot_3d_results(f1, x_vals1_gd, '1. Exact Line Search Gradient Decent')
+    plot_3d_results(f1, x_vals1_nt, '1. Exact Line Search Newton Method')
 
-    # x1_gd = gradient_decent(f1, x0, line_search=exact_line_search)
-    # print(x1_gd)
-    # x1_nt = newton_method(f1, x0, line_search=exact_line_search)
-    # print(x1_nt)
+    _, x_vals2_gd, f_vals2_gd = gradient_decent(f2_3, x0, line_search=exact_line_search)
+    _, x_vals2_nt, f_vals2_nt = newton_method(f2_3, x0, line_search=exact_line_search)
+    plot_3d_results(f2_3, x_vals2_gd, '2. Exact Line Search Gradient Decent')
+    plot_3d_results(f2_3, x_vals2_nt, '2. Exact Line Search Newton Method')
 
-    # x2_gd = gradient_decent(f2_3, x0, line_search=exact_line_search)
-    # print(x2_gd)
-    # x2_nt = newton_method(f2_3, x0, line_search=exact_line_search)
-    # print(x2_nt)
-
-    # x3_gd = gradient_decent(f2_3, x0, line_search=inexact_line_search)
-    # print(x3_gd)
-    # x3_nt = newton_method(f2_3, x0, line_search=inexact_line_search)
-    # print(x3_nt)
+    _, x_vals3_gd, f_vals3_gd = gradient_decent(f2_3, x0, line_search=exact_line_search)
+    _, x_vals3_nt, f_vals3_nt = newton_method(f2_3, x0, line_search=exact_line_search)
+    plot_3d_results(f2_3, x_vals3_gd, '2. Inexact Line Search Gradient Decent')
+    plot_3d_results(f2_3, x_vals3_nt, '2. Inexact Line Search Newton Method')
 
     # section 2.6
     f_rosenbrock = f_rosenbrock(10)
