@@ -43,13 +43,14 @@ class f_rosenbrock:
 
     def hessian(self, x):
         hess = np.zeros((self.n, self.n))
-        hess[0, 0] = 2 + 1200 * x[0]**2 - 400 * x[1] + 2 * x[0]
+        hess[0, 0] = 2 + 1200 * x[0]**2 - 400 * x[1]
         hess[-1, -1] = 200
-        hess[0, 1] = hess[1, 0] = -400 * x[0]
-        hess[-1, -2] = hess[-2, -1] = -400 * x[-2]
         for i in range(1, self.n - 1):
             hess[i, i] = 202 + 1200 * x[i]**2 - 400 * x[i+1]
-            hess[i-1, i] = hess[i, i-1] = -400 * x[i]
+            hess[i+1, i] = hess[i, i+1] = -400 * x[i]
+
+        hess[0, 1] = hess[1, 0] = -400 * x[0]
+        hess[-1, -2] = hess[-2, -1] = -400 * x[-2]
 
         return hess
 
@@ -100,7 +101,7 @@ def gradient_decent(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, m
     return x, x_vals, f_vals
 
 
-def newton_method(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max_iter=100000):
+def newton_method(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max_iter=1000):
     x_vals = []
     f_vals = []
 
@@ -119,7 +120,7 @@ def newton_method(f, x0, line_search=inexact_line_search, alpha=1, beta=0.5, max
         y = np.linalg.solve(L, -grad)
         p = np.linalg.solve(np.diag(d.flatten()) @ L.T, y)
 
-        lambda_squared = - grad.T @ p
+        # lambda_squared = - grad.T @ p
         if np.linalg.norm(grad) < eps:  # lambda_squared < eps:
             print("newton method converged")
             break
@@ -185,8 +186,8 @@ if __name__ == "__main__":
 
     _, x_vals3_gd, f_vals3_gd = gradient_decent(f2_3, x0, line_search=exact_line_search)
     _, x_vals3_nt, f_vals3_nt = newton_method(f2_3, x0, line_search=exact_line_search)
-    plot_3d_results(f2_3, x_vals3_gd, '2. Inexact Line Search Gradient Decent')
-    plot_3d_results(f2_3, x_vals3_nt, '2. Inexact Line Search Newton Method')
+    plot_3d_results(f2_3, x_vals3_gd, '3. Inexact Line Search Gradient Decent')
+    plot_3d_results(f2_3, x_vals3_nt, '3. Inexact Line Search Newton Method')
 
     # section 2.6
     f_rosenbrock = f_rosenbrock(10)
