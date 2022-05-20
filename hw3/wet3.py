@@ -10,6 +10,42 @@ eps = 1e-5
 c_1 = 0.25
 c_2 = 0.5
 
+class NeuralNetwork:
+    def __init__(self, d_in=2):
+        self.d_in = d_in
+        self.dims = [2, 4, 3, 1]
+        # construct the Weight matrices
+        self.W = [ np.random.rand(din,dout) for din,dout in zip(self.dims[:-1],self.dims[1:])]
+
+    def __call__(self, x):
+        assert x.shape[0] == self.d_in, "incompatible input"
+
+
+class f_xexp:
+    # Q1.3.5
+    def __call__(self, x):
+        x = x.reshape(-1,2)
+        x1, x2 = x[:,0], x[:,1]
+        return x1 * np.exp(-1*(x1**2 + x2**2))
+
+class activation_fn:
+    # Q 1.3.6
+    def __call__(self, x):
+        return (np.exp(x) - np.exp(-x)) / (np.exp(x) + np.exp(-x))
+
+    def grad(self, x):
+        return 1 - activation_fn(x) ** 2
+
+class loss_fn:
+    # Q 1.3.7
+    def __call__(self, y, y_hat):
+        assert y.shape == y_hat.shape
+        return np.sum( np.linalg.norm(y - y_hat) ** 2 ) / y.shape[0]
+
+    def grad(self,y , y_hat):
+        assert y.shape == y_hat.shape
+        return 2 * np.sum(y - y_hat) / y.shape[0]
+
 
 class FRosenbrock:
     def __init__(self, n=10):
@@ -86,6 +122,7 @@ def bfgs(f, x, max_iter=10000):
         y = grad_new - grad
         s = x_new - x
         rho = 1 / (y.T @ s)
+        y, s = y.reshape(-1,1), s.reshape(-1,1)
         H_inv = (np.eye(x.shape[0]) - rho * y @ s.T) @ H_inv @ \
                 (np.eye(x.shape[0]) - rho * s @ y.T) + rho * s @ s.T
         p = - H_inv @ grad_new
@@ -100,6 +137,19 @@ def bfgs(f, x, max_iter=10000):
     return x, x_vals, f_vals
 
 
+def generate_dataset(n):
+    """
+    samples dataset set from function
+    :param n: dataset size
+    :return:
+    """
+    # default rand samples on [0,1) so extending to [-2,2)
+    x_ds = random.random.rand(n,2) * 4 - 2
+    fn = f_xexp()
+    y_ds = fn(x_ds)
+    return x_ds, y_ds
+
+
 if __name__ == '__main__':
     # Rosenbrock
     f = FRosenbrock(n=10)
@@ -110,5 +160,15 @@ if __name__ == '__main__':
     # plot
     x_vals = np.array(x_vals)
     f_vals = np.array(f_vals)
-    plt.plot(x_vals, f_vals)
-    plt.show()
+
+    # Q1.2 plot log scale graph of result f_vals
+    ax = plt.axes()
+    ax.set_ylabel("log")
+    plt.xlabel("iteration")
+    ax.set_title("Distance of Rosebrock function value from optimum -logscale")
+    ax.plot(f_vals)
+    # plt.show()
+
+    # Q1.3.10
+    x_ds, y_ds = generate_dataset(n=500)
+
