@@ -43,12 +43,12 @@ class f_rosenbrock:
 
     def hessian(self, x):
         hess = np.zeros((self.n, self.n))
-        hess[0, 0] = 2 + 1200 * x[0]**2 - 400 * x[1]
-        hess[-1, -1] = 200
-        for i in range(1, self.n - 1):
+        for i in range(0, self.n - 1):
             hess[i, i] = 202 + 1200 * x[i]**2 - 400 * x[i+1]
             hess[i+1, i] = hess[i, i+1] = -400 * x[i]
 
+        hess[0, 0] = 2 + 1200 * x[0]**2 - 400 * x[1]
+        hess[-1, -1] = 200
         hess[0, 1] = hess[1, 0] = -400 * x[0]
         hess[-1, -2] = hess[-2, -1] = -400 * x[-2]
 
