@@ -8,7 +8,7 @@ sys.path.append('..')
 #### parameters
 eps = 1e-5
 c_1 = 0.25
-c_2 = 0.5
+c_2 = 0.9
 
 class NeuralNetwork:
     def __init__(self, d_in=2):
@@ -84,14 +84,14 @@ def inexact_line_search(f, x, p, grad, alpha, beta):
     sigma is c
     m is grad^T @ p
     """
-    while f(x) - f(x + alpha * p) < - alpha * c_1 * p.T @ grad \
-            and f.gradient(x + alpha * p).T @ p > c_2 * grad.T @ p:
+    while not (f(x + alpha * p) <= f(x) + alpha * c_1 * p.T @ grad) \
+            or not (f.gradient(x + alpha * p).T @ p >= c_2 * grad.T @ p):
         alpha = beta * alpha
 
     return alpha
 
 
-def bfgs(f, x, max_iter=10000):
+def bfgs(f, x, max_iter=100000):
     """
     BFGS
     """
@@ -114,7 +114,7 @@ def bfgs(f, x, max_iter=10000):
             break
 
         # line search
-        alpha = inexact_line_search(f, x, p, grad, alpha, 0.5)
+        alpha = inexact_line_search(f, x, p, grad, 1, 0.5)
 
         # update
         x_new = x + alpha * p
@@ -144,7 +144,7 @@ def generate_dataset(n):
     :return:
     """
     # default rand samples on [0,1) so extending to [-2,2)
-    x_ds = random.random.rand(n,2) * 4 - 2
+    x_ds = np.random.rand(n, 2) * 4 - 2
     fn = f_xexp()
     y_ds = fn(x_ds)
     return x_ds, y_ds
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     plt.xlabel("iteration")
     ax.set_title("Distance of Rosebrock function value from optimum -logscale")
     ax.plot(f_vals)
-    # plt.show()
+    plt.show()
 
     # Q1.3.10
     x_ds, y_ds = generate_dataset(n=500)
