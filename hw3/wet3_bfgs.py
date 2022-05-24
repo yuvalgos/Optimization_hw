@@ -47,13 +47,8 @@ def inexact_line_search(f, x, p, grad, alpha, beta):
     sigma is c
     m is grad^T @ p
     """
-    m = grad.T @ p
-
-    while f(x + alpha * p) - f(x) > alpha * c_1 * m or \
-        np.abs(f.gradient(x + alpha * p).T @ p) > c_2 * np.abs(m):
-    #
-    # while not (f(x + alpha * p) <= f(x) + alpha * c_1 * p.T @ grad) \
-    #         or not (f.gradient(x + alpha * p).T @ p >= c_2 * grad.T @ p):
+    while not (f(x + alpha * p) <= f(x) + alpha * c_1 * p.T @ grad) \
+            or not (f.gradient(x + alpha * p).T @ p >= c_2 * grad.T @ p):
 
         alpha = beta * alpha
 
@@ -72,10 +67,10 @@ def bfgs(f, x, max_iter=100000):
     grad = f.gradient(x)
     H_inv = np.eye(x.shape[0])
     p = -H_inv @ grad
-    alpha = 1.0
 
     # iteration
     for i in range(max_iter):
+        print(grad)
         f_vals.append(f(x))
         x_vals.append(x)
 
@@ -92,8 +87,8 @@ def bfgs(f, x, max_iter=100000):
         s = x_new - x
         rho = 1 / (y.T @ s)
         y, s = y.reshape(-1,1), s.reshape(-1,1)
-        H_inv = (np.eye(x.shape[0]) - rho * y @ s.T) @ H_inv @ \
-                (np.eye(x.shape[0]) - rho * s @ y.T) + rho * s @ s.T
+        H_inv = (np.eye(x.shape[0]) - rho * s @ y.T) @ H_inv @ \
+                (np.eye(x.shape[0]) - rho * y @ s.T) + rho * s @ s.T
         p = - H_inv @ grad_new
 
         # update

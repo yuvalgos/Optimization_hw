@@ -180,7 +180,6 @@ def optimize_nn_params(x_train, y_train, W, eps, max_iter):
     grad = nn_grad_entire_set(x_train, y_train, W)
     H_inv = np.eye(grad.shape[0])
     p = - H_inv @ grad
-    alpha = 1.0
 
     for i in range(max_iter):
 
@@ -192,13 +191,13 @@ def optimize_nn_params(x_train, y_train, W, eps, max_iter):
 
         # update
         W_new = W + alpha * p
-        grad_new = nn_grad_entire_set()
+        grad_new = nn_grad_entire_set(x_train, y_train, W_new)
         y = grad_new - grad
         s = W_new - W
         rho = 1 / (y.T @ s)
         y, s = y.reshape(-1, 1), s.reshape(-1, 1)
-        H_inv = (np.eye(W.shape[0]) - rho * y @ s.T) @ H_inv @ \
-                (np.eye(W.shape[0]) - rho * s @ y.T) + rho * s @ s.T
+        H_inv = (np.eye(W.shape[0]) - rho * s @ y.T) @ H_inv @ \
+                (np.eye(W.shape[0]) - rho * y @ s.T) + rho * s @ s.T
         p = - H_inv @ grad_new
 
         # update
