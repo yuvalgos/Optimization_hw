@@ -51,9 +51,9 @@ def generate_dataset(n):
 
 
 def init_nn_params():
-    w1 = np.random.rand(2, 4).reshape(-1)
-    w2 = np.random.rand(4, 3).reshape(-1)
-    w3 = np.random.rand(3, 1).reshape(-1)
+    w1 = np.random.randn(2, 4).reshape(-1) / 2
+    w2 = np.random.randn(4, 3).reshape(-1) / np.sqrt(3)
+    w3 = np.random.randn(3, 1).reshape(-1)
     b1 = np.zeros(4)
     b2 = np.zeros(3)
     b3 = np.zeros(1)
