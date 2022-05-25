@@ -8,7 +8,7 @@ sys.path.append('..')
 #### parameters
 eps = 1e-5
 c_1 = 0.25
-c_2 = 0.9
+c_2 = 1
 
 
 class f_xexp:
@@ -31,10 +31,10 @@ class activation_function:
 class loss_function:
     # Q 1.3.7
     def __call__(self, y, y_hat):
-        return (y - y_hat) ** 2
+        return (y_hat - y) ** 2
 
     def grad(self, y, y_hat):
-        return 2 * (y - y_hat)
+        return 2 * (y_hat - y)
 
 
 def generate_dataset(n):
@@ -88,7 +88,7 @@ def nn_forward(x, W):
 def nn_loss_entire_set(x_arr, y_arr, W):
     y_hat_arr = []
     for x in x_arr:
-        y_hat_arr.append(nn_forward(x, W))
+        y_hat_arr.append(nn_forward(x, W).squeeze())
 
     y_hat_arr = np.array(y_hat_arr)
     return np.mean(loss_function()(y_arr, y_hat_arr))
@@ -158,7 +158,7 @@ def inexact_line_search(x_train, y_train, W, p, grad, alpha, beta):
     sigma is c
     m is grad^T @ p
     """
-    print("starting line search")
+    # print("starting line search")
 
     loss_orig = nn_loss_entire_set(x_train, y_train, W)
     loss_new = nn_loss_entire_set(x_train, y_train, W + alpha * p)
@@ -170,7 +170,7 @@ def inexact_line_search(x_train, y_train, W, p, grad, alpha, beta):
         loss_new = nn_loss_entire_set(x_train, y_train, W + alpha*p)
         grad_new = nn_grad_entire_set(x_train, y_train, W + alpha*p)
 
-        print("alpha:", alpha)
+        # print("alpha:", alpha)
 
     return alpha
 
@@ -221,7 +221,7 @@ if __name__ == '__main__':
         W_opt = optimize_nn_params(x_train, y_train, W0, eps, max_iter=10000)
 
         loss = nn_loss_entire_set(x_test, y_test, W_opt)
-        print(loss)
+        print(f"epsilon {eps} loss {loss}")
 
 
     # nn = NeuralNetwork(d_in=2)
