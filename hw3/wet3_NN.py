@@ -125,13 +125,13 @@ def nn_grad(x, y, W):
     w3_grad = a2 * loss_grad
     b3_grad = loss_grad
 
-    a2_grad = loss_grad * w3
-    w2_grad = a1 @ a2_grad.T @ np.diag(act_fn.grad(z2).squeeze())
-    b2_grad = a2_grad.T @ np.diag(act_fn.grad(z2).squeeze())
+    d2 = act_fn.grad(z2) * (w3 @ loss_grad)
+    w2_grad = a1 @ d2.T
+    b2_grad = d2
 
-    a1_grad = a2_grad.T @ (np.diag(act_fn.grad(z2).squeeze()) @ w2.T)
-    w1_grad = x @ a1_grad @ np.diag(act_fn.grad(z1).squeeze())
-    b1_grad = a1_grad @ np.diag(act_fn.grad(z1).squeeze())
+    d1 = act_fn.grad(z1) * (w2 @ d2)
+    w1_grad = x @ d1.T
+    b1_grad = d1
 
     W = np.concatenate([w1_grad.reshape(-1),
                         b1_grad.squeeze(),
