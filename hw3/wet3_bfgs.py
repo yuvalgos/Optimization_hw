@@ -70,7 +70,6 @@ def bfgs(f, x, max_iter=100000):
 
     # iteration
     for i in range(max_iter):
-        print(grad)
         f_vals.append(f(x))
         x_vals.append(x)
 

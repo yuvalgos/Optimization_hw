@@ -91,7 +91,7 @@ def nn_loss_entire_set(x_arr, y_arr, W):
         y_hat_arr.append(nn_forward(x, W).squeeze())
 
     y_hat_arr = np.array(y_hat_arr)
-    return np.mean(loss_function()(y_arr, y_hat_arr))
+    return np.mean(loss_function()(y_arr, y_hat_arr)), y_hat_arr
 
 
 def nn_grad(x, y, W):
@@ -158,19 +158,15 @@ def inexact_line_search(x_train, y_train, W, p, grad, alpha, beta):
     sigma is c
     m is grad^T @ p
     """
-    # print("starting line search")
-
-    loss_orig = nn_loss_entire_set(x_train, y_train, W)
-    loss_new = nn_loss_entire_set(x_train, y_train, W + alpha * p)
+    loss_orig, _ = nn_loss_entire_set(x_train, y_train, W)
+    loss_new, _ = nn_loss_entire_set(x_train, y_train, W + alpha * p)
     grad_new = nn_grad_entire_set(x_train, y_train, W + alpha*p)
     while not (loss_new <= loss_orig + alpha * c_1 * p.T @ grad) \
             or not (grad_new.T @ p >= c_2 * grad.T @ p):
         alpha = beta * alpha
 
-        loss_new = nn_loss_entire_set(x_train, y_train, W + alpha*p)
+        loss_new, _ = nn_loss_entire_set(x_train, y_train, W + alpha*p)
         grad_new = nn_grad_entire_set(x_train, y_train, W + alpha*p)
-
-        # print("alpha:", alpha)
 
     return alpha
 
@@ -207,8 +203,27 @@ def optimize_nn_params(x_train, y_train, W, eps, max_iter):
         # print
         print('iter: {}, grad_norm: {}, loss: {}'.format(i,
                                                          np.linalg.norm(grad),
-                                                         nn_loss_entire_set(x_train, y_train, W)))
+                                                         nn_loss_entire_set(x_train, y_train, W)[0]))
     return W
+
+
+def visualize_results(f, x, y, epsilon, scatter: bool = True):
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
+    x_axis = np.arange(-2, 2, 0.2)
+    y_axis = np.arange(-2, 2, 0.2)
+    x_grid, y_grid = np.meshgrid(x_axis, y_axis)
+    z = np.zeros_like(x_grid)
+    for i in range(x_grid.shape[0]):
+        for j in range(x_grid.shape[1]):
+            z[i, j] = f(np.array([x_grid[i, j], y_grid[i, j]]))
+
+    surf = ax.plot_surface(x_grid, y_grid, z, cmap='viridis', alpha=0.7)
+    if scatter:
+        ax.scatter(x[:, 0], x[:, 1], y, c='r', marker='.', s=10)
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+    ax.set_title(f"Test Set, Optimized NN With Epsilon = {eps}")
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -220,8 +235,10 @@ if __name__ == '__main__':
         W0 = init_nn_params()
         W_opt = optimize_nn_params(x_train, y_train, W0, eps, max_iter=10000)
 
-        loss = nn_loss_entire_set(x_test, y_test, W_opt)
+        loss, y_nn = nn_loss_entire_set(x_test, y_test, W_opt)
         print(f"epsilon {eps} loss {loss}")
 
+        # visualize
+        visualize_results(f=f_xexp(), x=x_test, y=y_nn, scatter=True, epsilon=eps)
 
-    # nn = NeuralNetwork(d_in=2)
+
