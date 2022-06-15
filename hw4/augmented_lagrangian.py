@@ -94,6 +94,7 @@ class lagrangian:
 def augmented_lagrangian(lagrangian, x0, lambda_0, p_max, alpha=2, max_iter=100):
     x = x0
     lambda_ = lambda_0
+    plt_dict = dict(augmented_grads=[], f_vals=[], max_violations=[], x_list=[], lam_list=[])
 
     for i in range(max_iter):
         new_x, x_vals, lag_vals = newton_method(lagrangian, x, lambda_)
@@ -106,20 +107,51 @@ def augmented_lagrangian(lagrangian, x0, lambda_0, p_max, alpha=2, max_iter=100)
 
         x = new_x
         lambda_ = new_lambda
+
+        plt_dict['x_list'].append(x)
+        plt_dict['lam_list'].append(lambda_)
+        plt_dict['f_vals'].append(lagrangian(x, lambda_))
+        plt_dict['augmented_grads'].append(np.linalg.norm(lagrangian.grad(x, lambda_)))
+        plt_dict['max_violations'].append(np.max(lagrangian.constraints(x)))
+
         print(lambda_)
 
-    return x, lambda_
+    return x, lambda_, plt_dict
 
 if __name__ == "__main__":
+
     f = f()
     constraint_funcs = [g1(), g2(), g3()]
     phi_p = phi_p()
     lagrangian = lagrangian(f, constraint_funcs, phi_p, 1)
 
+    # parameters
     x0 = np.array([0, 0])
     lambda_0 = np.array([1.0, 1.0, 1.0])
 
-    optimal_x, lambda_ = augmented_lagrangian(lagrangian, x0, lambda_0, p_max=1000, alpha=2, max_iter=10)
+    # optimal analytically achived solution
+    x_opt = np.array([[2/3], [2/3]])
+    lambda_opt = np.array([[12], [11+1/3], [0]])
+    f_opt = langrangian(x_opt, lambda_opt)
+
+    # numeric optimization
+    optimal_x, lambda_, plt_dict = augmented_lagrangian(lagrangian, x0, lambda_0, p_max=1000, alpha=2, max_iter=10)
+
+    fig, ax = plt.subplots(2,2)
+    iters = np.arange(len(plt_dict['x_list']))
+    ax[0,0].plot(iters, plt_dict['augmented_grads'])
+    ax[0.0].set(yscale="log", title="Augmented Lagrangian Gradient")
+
+    ax[0,1].plot(iters, np.abs(np.array(plt_dict['f_vals']) - f_opt))
+    ax[0,1].set(yscale="log", title="|f_k - f_opt|")
+
+    ax[1,0].plot(iters, plt_dict['max_violations'])
+    ax[1,0].set(yscale="log", title="Max Violation")
+
+    ax[1,1].plot(iters, plt_dict['lam_list'], label=r'||$\lambda_k$ - $\lambda^*$||')
+    ax[1,1].plot(iters, plt_dict['x_list'], label=r'||$\x_k$ - $\x^*$||')
+    ax[1,1].set(yscale="log", title=r'Xs & $\lambda$s distance from optimum')
+    plt.show()
 
     print("optimal x: ", optimal_x)
     print("optimal lambda: ", lambda_)
