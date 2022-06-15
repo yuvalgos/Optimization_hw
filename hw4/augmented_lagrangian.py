@@ -1,4 +1,6 @@
 import numpy as np
+from matplotlib import pyplot as plt
+
 from newton_method import newton_method
 
 
@@ -94,10 +96,12 @@ class lagrangian:
 def augmented_lagrangian(lagrangian, x0, lambda_0, p_max, alpha=2, max_iter=100):
     x = x0
     lambda_ = lambda_0
-    plt_dict = dict(augmented_grads=[], f_vals=[], max_violations=[], x_list=[], lam_list=[])
+    plt_dict = dict(augmented_grads=[], f_vals=[], max_violations=[], x_list=[], lam_list=[], newton_iter=[])
+    newton_iter = 0
 
     for i in range(max_iter):
         new_x, x_vals, lag_vals = newton_method(lagrangian, x, lambda_)
+        newton_iter += len(x_vals)
 
         new_lambda = np.zeros(len(lambda_))
         for j in range(len(lambda_)):
@@ -108,13 +112,12 @@ def augmented_lagrangian(lagrangian, x0, lambda_0, p_max, alpha=2, max_iter=100)
         x = new_x
         lambda_ = new_lambda
 
+        plt_dict['newton_iter'].append(newton_iter)
         plt_dict['x_list'].append(x)
         plt_dict['lam_list'].append(lambda_)
         plt_dict['f_vals'].append(lagrangian(x, lambda_))
         plt_dict['augmented_grads'].append(np.linalg.norm(lagrangian.grad(x, lambda_)))
-        plt_dict['max_violations'].append(np.max(lagrangian.constraints(x)))
-
-        print(lambda_)
+        plt_dict['max_violations'].append(np.max([constr(x) for constr in lagrangian.constraints] + [0]))
 
     return x, lambda_, plt_dict
 
@@ -130,28 +133,37 @@ if __name__ == "__main__":
     lambda_0 = np.array([1.0, 1.0, 1.0])
 
     # optimal analytically achived solution
-    x_opt = np.array([[2/3], [2/3]])
-    lambda_opt = np.array([[12], [11+1/3], [0]])
-    f_opt = langrangian(x_opt, lambda_opt)
+    x_opt = np.array([2/3, 2/3])
+    lambda_opt = np.array([12, 11+1/3, 0])
+    f_opt = lagrangian(x_opt, lambda_opt)
 
     # numeric optimization
-    optimal_x, lambda_, plt_dict = augmented_lagrangian(lagrangian, x0, lambda_0, p_max=1000, alpha=2, max_iter=10)
-
-    fig, ax = plt.subplots(2,2)
-    iters = np.arange(len(plt_dict['x_list']))
-    ax[0,0].plot(iters, plt_dict['augmented_grads'])
-    ax[0.0].set(yscale="log", title="Augmented Lagrangian Gradient")
-
-    ax[0,1].plot(iters, np.abs(np.array(plt_dict['f_vals']) - f_opt))
-    ax[0,1].set(yscale="log", title="|f_k - f_opt|")
-
-    ax[1,0].plot(iters, plt_dict['max_violations'])
-    ax[1,0].set(yscale="log", title="Max Violation")
-
-    ax[1,1].plot(iters, plt_dict['lam_list'], label=r'||$\lambda_k$ - $\lambda^*$||')
-    ax[1,1].plot(iters, plt_dict['x_list'], label=r'||$\x_k$ - $\x^*$||')
-    ax[1,1].set(yscale="log", title=r'Xs & $\lambda$s distance from optimum')
-    plt.show()
+    optimal_x, lambda_, plt_dict = augmented_lagrangian(lagrangian, x0, lambda_0, p_max=100, alpha=2, max_iter=20)
 
     print("optimal x: ", optimal_x)
     print("optimal lambda: ", lambda_)
+
+    fig, ax = plt.subplots(2,2)
+    iters = plt_dict['newton_iter']
+    ax[0, 0].plot(iters, plt_dict['augmented_grads'])
+    ax[0, 0].set(yscale="log", title="Augmented Lagrangian Gradient")
+
+    ax[0, 1].plot(iters, np.abs(np.array(plt_dict['f_vals']) - f_opt))
+    ax[0, 1].set(yscale="log", title="|f_k - f_opt|")
+
+    ax[1, 0].plot(iters, plt_dict['max_violations'])
+    ax[1, 0].set(yscale="log", title="Max Violation")
+
+    x_dist = [np.linalg.norm(x - x_opt) for x in plt_dict['x_list']]
+    lambda_dist = [np.linalg.norm(lam - lambda_opt) for lam in plt_dict['lam_list']]
+
+    ax[1, 1].plot(iters, lambda_dist, label=r'||$\lambda_k$ - $\lambda^*$||')
+    ax[1, 1].plot(iters, x_dist, label=r'||$x_k$ - $x^*$||')
+    ax[1, 1].set(yscale="log", title=r'Xs & $\lambda$s distance from optimum')
+    ax[1, 1].legend()
+
+    for ax in fig.axes:
+        ax.set_xlabel("Newton Iteration")
+    fig.tight_layout()
+    plt.show()
+
