@@ -22,13 +22,16 @@ def inexact_line_search(f, x, lambda_, p, grad, alpha, beta):
 def newton_method(f, x0, lambda_, line_search=inexact_line_search, alpha=1, beta=0.5, max_iter=10000):
     x_vals = []
     f_vals = []
+    grad_vals = []
 
     x = x0
     for i in range(max_iter):
         x_vals.append(x)
         f_vals.append(f(x, lambda_))
 
+
         grad = f.grad(x, lambda_)
+        grad_vals.append(grad)
         hess = f.hessian(x, lambda_)
 
         L, d, _ = mchol(hess)
@@ -48,4 +51,4 @@ def newton_method(f, x0, lambda_, line_search=inexact_line_search, alpha=1, beta
         alpha = line_search(f, x, lambda_, p, grad, alpha, beta)
         x = x + alpha * p
 
-    return x, x_vals, f_vals
+    return x, x_vals, f_vals, grad_vals
