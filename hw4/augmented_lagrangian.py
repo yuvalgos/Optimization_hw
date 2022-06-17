@@ -57,6 +57,9 @@ class phi_p:
     def derivative(self, x, p):
         return self._derivative_phi(p*x)
 
+    def derivative_2(self, x, p):
+        return self._derivative_2_phi(p*x)
+
     def _phi(self, x):
         res = np.where(x >= -0.5, 0.5 * x ** 2 + x, -0.25 * np.log(-2 * x) - 3/8)
         return res
@@ -64,6 +67,8 @@ class phi_p:
     def _derivative_phi(self, x):
         return np.where(x >= -0.5, x + 1, -0.25/x)
 
+    def _derivative_2_phi(self, x):
+        return np.where(x >= -0.5, 1, 0.25/(x**2))
 
 class lagrangian:
     def __init__(self, f, constraint_funcs, phi_p, p):
@@ -89,7 +94,10 @@ class lagrangian:
 
     def hessian(self, x, lambda_):
         hessian = self.f.hessian(x)
-        # all constraints we use are linear so their hessian are zeros and we can ignore them
+        for i in range(len(self.constraints)):
+            hessian = hessian + lambda_[i] *\
+                                self.phi_p.derivative_2(self.constraints[i](x), self.p) *\
+                                np.outer(self.constraints[i].grad(x), self.constraints[i].grad(x))
         return hessian
 
 
@@ -119,6 +127,9 @@ def augmented_lagrangian(lagrangian, x0, lambda_0, p_max, alpha=2, max_iter=100)
         plt_dict['augmented_grads'].extend([np.linalg.norm(g) for g in grad_vals])
         plt_dict['max_violations'].extend([np.max([constr(x) for constr in lagrangian.constraints] + [0])] * len(x_vals))
 
+        if lagrangian.p >= p_max:
+            break
+
     return x, lambda_, plt_dict
 
 if __name__ == "__main__":
@@ -138,7 +149,7 @@ if __name__ == "__main__":
     f_opt = lagrangian(x_opt, lambda_opt)
 
     # numeric optimization
-    optimal_x, lambda_, plt_dict = augmented_lagrangian(lagrangian, x0, lambda_0, p_max=100, alpha=2, max_iter=20)
+    optimal_x, lambda_, plt_dict = augmented_lagrangian(lagrangian, x0, lambda_0, p_max=100, alpha=2)
 
     print("optimal x: ", optimal_x)
     print("optimal lambda: ", lambda_)
